@@ -22,4 +22,22 @@ const validateCampground = (req, res, next) => {
   }
 };
 
-module.exports = validateCampground;
+const reviewSchema = joi.object({
+  review: joi
+    .object({
+      rating: joi.number().min(1).max(5).required(),
+      body: joi.string().required(),
+    })
+    .required(),
+});
+
+const validateReview = (req, res, next) => {
+  const { error } = reviewSchema.validate(req.body);
+  if (error) {
+    console.log(error);
+    const message = error.details.map((err) => err.message).join(' ');
+    throw new ExpressError(400, message);
+  }
+};
+
+module.exports = { validateCampground, validateReview };
