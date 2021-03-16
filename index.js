@@ -3,137 +3,52 @@ const app = express();
 const path = require('path');
 const mongoose = require('mongoose');
 const methodOverride = require('method-override');
-const Camp = require('./models/Camp');
-const Review = require('./models/Review');
 const ExpressError = require('./utils/ExpressError');
-const catchAsync = require('./utils/catchAsync');
 const ejsMate = require('ejs-mate');
-const {
-  validateCampground,
-  validateReview,
-} = require('./utils/validateCampground');
+const cookieParser = require('cookie-parser');
+const campRoutes = require('./routes/campgrounds');
+const adminRoutes = require('./routes/admin');
 
 //MongoDB connection
 mongoose.connect('mongodb://localhost:27017/yelp-camp', {
   useCreateIndex: true,
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  // useFindAndModify: true
+  useFindAndModify: false,
 });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console.log('connection error')));
 db.once('open', () => console.log('database connected'));
-
 //App setup
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
+app.use(cookieParser());
 
-//Routes - CRUD
+//Campground Routes
+app.use('/campgrounds', campRoutes);
+app.use('/admin', adminRoutes);
+
+//Home Route
 app.get('/', (req, res) => {
   res.render('home');
 });
 
-// app.get('/admin', (req, res) => {
-//   if (req.query.password === 'thomas') {
-//     res.send('Welcome Thomas');
-//   }
-// });
+// Cookies
+app.get('/greet', (req, res) => {
+  const { name = 'No name' } = req.cookies;
 
-//Get all Campgrounds
-app.get(
-  '/campgrounds',
-  catchAsync(async (req, res) => {
-    const campgrounds = await Camp.find({});
-    res.render('campgrounds/index', { campgrounds });
-  })
-);
+  res.clearCookie('name');
 
-//Create new Campground - Form
-app.get('/campgrounds/new', (req, res) => {
-  res.render('campgrounds/new');
+  res.send(`Hello there, ${name}`);
 });
 
-//Create new Campground - Submit
-app.post(
-  '/campgrounds',
-  validateCampground,
-  catchAsync(async (req, res, next) => {
-    // if (!req.body.campground)
-    //   throw new ExpressError(400, 'Invalid Campground Data');
-
-    const campground = new Camp({
-      ...req.body.campground,
-    });
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`);
-  })
-);
-
-//Get one Campground
-app.get(
-  '/campgrounds/:id',
-  catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const campground = await Camp.findById(id);
-    res.render('campgrounds/show', { campground });
-  })
-);
-
-//Edit Campground - Form
-app.get(
-  '/campgrounds/:id/edit',
-  catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const campground = await Camp.findById(id);
-    res.render('campgrounds/edit', { campground });
-  })
-);
-
-//Edit Campground - Submit
-app.put(
-  '/campgrounds/:id',
-  validateCampground,
-  catchAsync(async (req, res) => {
-    const { id } = req.params;
-    if (!req.body.campground)
-      throw new ExpressError(400, 'Invalid Campground Data');
-
-    const campground = await Camp.findByIdAndUpdate(id, {
-      ...req.body.campground,
-    });
-    res.redirect(`/campgrounds/${campground._id}`);
-  })
-);
-
-//Delete Campground
-app.delete(
-  '/campgrounds/:id',
-  catchAsync(async (req, res) => {
-    const { id } = req.params;
-    await Camp.findByIdAndDelete(id);
-    res.redirect('/campgrounds');
-  })
-);
-
-// Review Routes
-app.get('/campgrounds/:id/reviews');
-
-app.post(
-  '/campgrounds/:id/reviews',
-  validateReview,
-  catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const campground = await Camp.findById(id);
-    const review = await new Review(req.body.review);
-    campground.reviews.push(review);
-    await review.save();
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`);
-  })
-);
+app.get('/setname', (req, res) => {
+  res.cookie('name', 'Nob');
+  res.send('COOKIE SENT');
+});
 
 //Error handling
 //404 Error Not Found

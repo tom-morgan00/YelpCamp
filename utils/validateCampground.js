@@ -20,6 +20,7 @@ const validateCampground = (req, res, next) => {
     const message = error.details.map((err) => err.message).join(' ');
     throw new ExpressError(400, message);
   }
+  next();
 };
 
 const reviewSchema = joi.object({
@@ -38,6 +39,7 @@ const validateReview = (req, res, next) => {
     const message = error.details.map((err) => err.message).join(' ');
     throw new ExpressError(400, message);
   }
+  next();
 };
 
 module.exports = { validateCampground, validateReview };
