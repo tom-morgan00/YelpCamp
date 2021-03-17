@@ -7,7 +7,10 @@ const ExpressError = require('./utils/ExpressError');
 const ejsMate = require('ejs-mate');
 const cookieParser = require('cookie-parser');
 const campRoutes = require('./routes/campgrounds');
+const reviewRoutes = require('./routes/reviews');
 const adminRoutes = require('./routes/admin');
+const session = require('express-session');
+const flash = require('connect-flash');
 
 //MongoDB connection
 mongoose.connect('mongodb://localhost:27017/yelp-camp', {
@@ -24,30 +27,38 @@ app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
-app.use(cookieParser());
+app.use(cookieParser('signed_cookie'));
+
+//Session and Flash
+const sessionConfig = {
+  saveUninitialized: true,
+  secret: 'this_is_a_secret',
+  resave: false,
+  cookie: {
+    expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    httpOnly: true,
+  },
+};
+app.use(session(sessionConfig));
+app.use(flash());
+
+app.use((req, res, next) => {
+  res.locals.success = req.flash('success');
+  res.locals.error = req.flash('error');
+  next();
+});
 
 //Campground Routes
 app.use('/campgrounds', campRoutes);
-app.use('/admin', adminRoutes);
+app.use('/campgrounds/:id/reviews', reviewRoutes);
+// app.use('/admin', adminRoutes);
 
 //Home Route
 app.get('/', (req, res) => {
   res.render('home');
-});
-
-// Cookies
-app.get('/greet', (req, res) => {
-  const { name = 'No name' } = req.cookies;
-
-  res.clearCookie('name');
-
-  res.send(`Hello there, ${name}`);
-});
-
-app.get('/setname', (req, res) => {
-  res.cookie('name', 'Nob');
-  res.send('COOKIE SENT');
 });
 
 //Error handling
