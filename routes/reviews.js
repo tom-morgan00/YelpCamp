@@ -5,13 +5,12 @@ const catchAsync = require('../utils/catchAsync');
 const { validateReview } = require('../utils/validateCampground');
 const { isLoggedIn, isReviewAuthor } = require('../utils/middleware');
 
-router.route('/', isLoggedIn, validateReview, catchAsync(reviews.createReview));
+router
+  .route('/')
+  .post(isLoggedIn, validateReview, catchAsync(reviews.createReview));
 
-router.delete(
-  '/:reviewID',
-  isLoggedIn,
-  isReviewAuthor,
-  catchAsync(reviews.deleteReview)
-);
+router
+  .route('/:reviewID')
+  .delete(isLoggedIn, isReviewAuthor, catchAsync(reviews.deleteReview));
 
 module.exports = router;
