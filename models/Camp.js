@@ -2,14 +2,19 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const Review = require('./Review');
 
+//res.cloudinary.com/tom1903/image/upload/v1616655685/YelpCamp/vm43o5qum9hwrsjpfgbh.jpg
+
+const imageSchema = new Schema({
+  url: String,
+  filename: String,
+});
+imageSchema.virtual('thumbnail').get(function () {
+  return this.url.replace('/upload', '/upload/w_200');
+});
+
 const campSchema = new Schema({
   name: String,
-  images: [
-    {
-      url: String,
-      filename: String,
-    },
-  ],
+  images: [imageSchema],
   price: Number,
   description: String,
   location: String,

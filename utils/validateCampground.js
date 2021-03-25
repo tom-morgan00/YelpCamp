@@ -11,6 +11,7 @@ const campgroundSchema = joi.object({
       description: joi.string().required(),
     })
     .required(),
+  deleteImages: joi.array(),
 });
 
 const validateCampground = (req, res, next) => {
