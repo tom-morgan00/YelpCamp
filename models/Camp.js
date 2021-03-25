@@ -4,7 +4,12 @@ const Review = require('./Review');
 
 const campSchema = new Schema({
   name: String,
-  image: String,
+  images: [
+    {
+      url: String,
+      filename: String,
+    },
+  ],
   price: Number,
   description: String,
   location: String,
