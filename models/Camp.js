@@ -1,3 +1,4 @@
+const { options } = require('joi');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const Review = require('./Review');
@@ -24,23 +25,38 @@ const geometrySchema = new Schema({
   },
 });
 
-const campSchema = new Schema({
-  name: String,
-  images: [imageSchema],
-  price: Number,
-  description: String,
-  geometry: geometrySchema,
-  location: String,
-  author: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
+const opts = {
+  toJSON: {
+    virtuals: true,
   },
-  reviews: [
-    {
+};
+const campSchema = new Schema(
+  {
+    name: String,
+    images: [imageSchema],
+    price: Number,
+    description: String,
+    geometry: geometrySchema,
+    location: String,
+    author: {
       type: Schema.Types.ObjectId,
-      ref: 'Review',
+      ref: 'User',
     },
-  ],
+    reviews: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Review',
+      },
+    ],
+  },
+  opts
+);
+
+campSchema.virtual('properties').get(function () {
+  return {
+    id: this._id,
+    name: this.name,
+  };
 });
 
 campSchema.post('findOneAndDelete', async (doc) => {
