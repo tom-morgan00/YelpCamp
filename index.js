@@ -18,6 +18,9 @@ const flash = require('connect-flash');
 const passport = require('passport');
 const localStrategy = require('passport-local');
 const User = require('./models/User');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
+const directives = require('./helmet');
 
 //MongoDB connection
 mongoose.connect('mongodb://localhost:27017/yelp-camp', {
@@ -37,6 +40,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use(cookieParser('signed_cookie'));
+app.use(mongoSanitize());
+app.use(helmet());
+app.use(helmet.contentSecurityPolicy({ directives }));
 
 //Session and Flash
 const sessionConfig = {
@@ -44,9 +50,11 @@ const sessionConfig = {
   secret: 'this_is_a_secret',
   resave: false,
   cookie: {
+    name: 'yelpcamp_session',
     expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
     maxAge: 1000 * 60 * 60 * 24 * 7,
     httpOnly: true,
+    // secure: true //turn on for production
   },
 };
 app.use(session(sessionConfig));
@@ -59,7 +67,6 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
-  // console.log(req.session);
   res.locals.currentUser = req.user;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
